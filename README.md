@@ -15,6 +15,28 @@ This phase of the project focuses on **system architecture design**, **use case 
 
 ---
 
+## Team Members & Roles
+
+- **Ahmad Al Habbal (40261029)**  
+  *Team Leader, Testing & Frontend Developer*
+
+- **Karim Mikhaeil (40233685)**  
+  *Full-Stack Developer*
+
+- **Mena Boulus (40291619)**  
+  *Full-Stack Developer*
+
+- **Marc El Haddad (40231208)**  
+  *Backend Developer & Documentation Lead*
+
+- **Abd Al Rahman Al Kabani (40247395)**  
+  *Full-Stack Developer*
+
+- **Harjot Minhas (40315397)**  
+  *Testing & Full-Stack Developer*
+
+---
+
 ## Table of Contents
 1. [System Architecture](#system-architecture)
    - [Selected Architecture](#selected-architecture-layered-architecture)
@@ -273,28 +295,6 @@ Admin views gateway-level analytics across services.
 
 ## Sequence Diagram
 Sequence diagrams illustrate interactions between users, the presentation layer, API layer, service layer, data layer, and external systems for key use cases such as reservation, payment, and vehicle return.
-
----
-
-## Team Members & Roles
-
-- **Ahmad Al Habbal (40261029)**  
-  *Team Leader, Testing & Frontend Developer*
-
-- **Karim Mikhaeil (40233685)**  
-  *Full-Stack Developer*
-
-- **Mena Boulus (40291619)**  
-  *Full-Stack Developer*
-
-- **Marc El Haddad (40231208)**  
-  *Backend Developer & Documentation Lead*
-
-- **Abd Al Rahman Al Kabani (40247395)**  
-  *Full-Stack Developer*
-
-- **Harjot Minhas (40315397)**  
-  *Testing & Full-Stack Developer*
 
 ---
 
