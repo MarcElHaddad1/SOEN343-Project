@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SUMMS Demo</title>
+</head>
+<body>
+
+<h1>Smart Urban Mobility Management System</h1>
+
+<h2>Search Vehicles</h2>
+
+City:
+<select id="city">
+    <option value="">All</option>
+    <option value="Montreal">Montreal</option>
+    <option value="Toronto">Toronto</option>
+</select>
+
+Type:
+<select id="type">
+    <option value="">All</option>
+    <option value="Car">Car</option>
+    <option value="Scooter">Scooter</option>
+    <option value="Bike">Bike</option>
+</select>
+
+<button onclick="searchVehicles()">Search</button>
+
+<pre id="vehicleResults"></pre>
+
+<hr>
+
+<h2>Reserve Vehicle</h2>
+Vehicle ID:
+<input type="number" id="vehicleId" />
+<button onclick="reserve()">Reserve</button>
+
+<hr>
+
+<h2>Rental Actions</h2>
+
+Rental ID:
+<input type="number" id="rentalId" />
+<button onclick="startRental()">Start Rental</button>
+<button onclick="endRental()">End Rental</button>
+
+<pre id="rentalResults"></pre>
+
+<hr>
+
+<h2>Analytics</h2>
+<button onclick="getAnalytics()">View Analytics</button>
+
+<pre id="analyticsResults"></pre>
+
+<script>
+    async function searchVehicles() {
+        const city = document.getElementById("city").value;
+        const type = document.getElementById("type").value;
+
+        const response = await fetch(`/vehicles?city=${city}&type=${type}`);
+        const data = await response.json();
+
+        document.getElementById("vehicleResults").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function reserve() {
+        const vehicleId = document.getElementById("vehicleId").value;
+
+        const response = await fetch(`/reserve/${vehicleId}`, { method: "POST" });
+        const data = await response.json();
+
+        document.getElementById("rentalResults").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function startRental() {
+        const rentalId = document.getElementById("rentalId").value;
+
+        const response = await fetch(`/start/${rentalId}`, { method: "POST" });
+        const data = await response.json();
+
+        document.getElementById("rentalResults").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function endRental() {
+        const rentalId = document.getElementById("rentalId").value;
+
+        const response = await fetch(`/end/${rentalId}`, { method: "POST" });
+        const data = await response.json();
+
+        document.getElementById("rentalResults").textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function getAnalytics() {
+        const response = await fetch(`/analytics`);
+        const data = await response.json();
+
+        document.getElementById("analyticsResults").textContent = JSON.stringify(data, null, 2);
+    }
+</script>
+
+</body>
+</html>
