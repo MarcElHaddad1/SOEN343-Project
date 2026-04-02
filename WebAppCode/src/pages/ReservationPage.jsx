@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { useApp } from "../context/AppContext";
+import { useState } from "react";
 
 export default function ReservationPage() {
-    const { myReservations, payReservation, returnVehicle } = useApp();
+    const { myReservations, payReservation, returnVehicle, currentUser } = useApp();
 
     const [confirmBox, setConfirmBox] = useState({
         open: false,
@@ -11,6 +11,11 @@ export default function ReservationPage() {
         title: "",
         text: "",
     });
+
+    const providerWaitingApproval =
+        currentUser &&
+        currentUser.role === "provider" &&
+        !currentUser.approved;
 
     const openPayConfirm = (reservationId) => {
         setConfirmBox({
@@ -53,6 +58,23 @@ export default function ReservationPage() {
 
         closeConfirm();
     };
+
+    if (providerWaitingApproval) {
+        return (
+            <div className="card">
+                <div className="card-header">
+                    <h2>Reservation Management</h2>
+                    <p className="muted">
+                        Review reservations, simulate payment, and return vehicles.
+                    </p>
+                </div>
+
+                <p className="warning">
+                    Your provider account is waiting for admin approval. Reservations are unavailable until your account is approved.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="card">

@@ -12,6 +12,15 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (currentUser) {
+            if (currentUser.role === "admin") {
+                navigate("/admin");
+                return;
+            }
+
+            if (currentUser.role === "provider" && !currentUser.approved) {
+                return;
+            }
+
             navigate("/search");
         }
     }, [currentUser, navigate]);
@@ -21,51 +30,83 @@ export default function LoginPage() {
 
         const result = login(email, password);
         setMessage(result.message);
-
-        if (result.success) {
-            navigate("/search");
-        }
     };
 
     return (
-        <div className="card auth-card">
-            <div className="card-header">
-                <h2>Login</h2>
-                <p className="muted">Sign in to search, reserve, and manage vehicles.</p>
+        <div className="auth-shell">
+            <div className="auth-panel auth-panel-left">
+                <div className="auth-left-content">
+                    <span className="auth-eyebrow">Mobility Rental Platform</span>
+                    <h1>Welcome back</h1>
+                    <p>
+                        Sign in to access vehicle search, reservations, analytics,
+                        and provider tools.
+                    </p>
+
+                    <div className="auth-feature-list">
+                        <div className="auth-feature-item">
+                            <strong>Fast access</strong>
+                            <span>Search and reserve vehicles in seconds.</span>
+                        </div>
+
+                        <div className="auth-feature-item">
+                            <strong>Provider workflow</strong>
+                            <span>Approved providers can manage vehicle inventory.</span>
+                        </div>
+
+                        <div className="auth-feature-item">
+                            <strong>Admin control</strong>
+                            <span>Review and approve provider accounts.</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="form-grid">
-                <input
-                    className="input"
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
+            <div className="auth-panel auth-panel-right">
+                <div className="card auth-card auth-card-modern">
+                    <div className="card-header">
+                        <h2>Login</h2>
+                        <p className="muted">Enter your credentials to continue.</p>
+                    </div>
 
-                <input
-                    className="input"
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+                    <form onSubmit={handleSubmit} className="form-grid">
+                        <input
+                            className="input"
+                            type="text"
+                            placeholder="Email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
 
-                <button className="btn primary-btn" type="submit">
-                    Login
-                </button>
-            </form>
+                        <input
+                            className="input"
+                            type="password"
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
 
-            {message && <p className="message">{message}</p>}
+                        <button className="btn primary-btn" type="submit">
+                            Login
+                        </button>
+                    </form>
 
-            <p className="muted auth-footer-text">
-                No account yet? <Link to="/register">Create one here</Link>
-            </p>
+                    {message && <p className="message">{message}</p>}
 
-            <div className="demo-box">
-                <strong>Demo tip:</strong> create one customer account and one provider account.
+                    {currentUser &&
+                        currentUser.role === "provider" &&
+                        !currentUser.approved && (
+                            <div className="warning" style={{ marginTop: "12px" }}>
+                                Your provider account is waiting for admin approval.
+                            </div>
+                        )}
+
+                    <p className="muted auth-footer-text">
+                        No account yet? <Link to="/register">Create one here</Link>
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -41,7 +41,29 @@ export default function Navbar() {
                         </>
                     )}
 
-                    {currentUser && (
+                    {currentUser && currentUser.role === "admin" && (
+                        <>
+                            <NavLink
+                                to="/admin"
+                                className={({ isActive }) =>
+                                    isActive ? "nav-link active-link" : "nav-link"
+                                }
+                            >
+                                Admin Panel
+                            </NavLink>
+
+                            <NavLink
+                                to="/analytics"
+                                className={({ isActive }) =>
+                                    isActive ? "nav-link active-link" : "nav-link"
+                                }
+                            >
+                                Analytics
+                            </NavLink>
+                        </>
+                    )}
+
+                    {currentUser && currentUser.role !== "admin" && (
                         <>
                             <NavLink
                                 to="/search"
@@ -70,7 +92,7 @@ export default function Navbar() {
                                 Analytics
                             </NavLink>
 
-                            {currentUser.role === "provider" && (
+                            {currentUser.role === "provider" && currentUser.approved && (
                                 <NavLink
                                     to="/provider"
                                     className={({ isActive }) =>

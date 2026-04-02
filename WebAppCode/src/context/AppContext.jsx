@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 const AppContext = createContext();
@@ -55,6 +56,15 @@ const starterVehicles = [
         image: pickRandomVehicleImage(),
     },
 ];
+
+const hardcodedAdmin = {
+    id: "admin-fixed",
+    name: "Administrator",
+    email: "admin",
+    password: "admin",
+    role: "admin",
+    approved: true,
+};
 
 export function AppProvider({ children }) {
     const toastTimerRef = useRef(null);
@@ -139,15 +149,45 @@ export function AppProvider({ children }) {
         }, 2200);
     };
 
-    const register = (name, email, password, role) => {
+    const sendSMS = async (phone, message) => {
+        if (!phone) return;
+
+        try {
+            await fetch("http://localhost:5000/send-sms", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ phone, message }),
+            });
+        } catch (error) {
+            console.error("SMS send failed:", error);
+        }
+    };
+
+    const sendInvoiceEmail = async (email, details) => {
+        if (!email) return;
+
+        try {
+            await fetch("http://localhost:5000/send-invoice", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, details }),
+            });
+        } catch (error) {
+            console.error("Invoice email failed:", error);
+        }
+    };
+
+    const register = (name, email, password, role, phone) => {
         const exists = users.some(
             (user) => user.email.toLowerCase() === email.toLowerCase()
         );
 
-        if (exists) {
+        if (exists || email.toLowerCase() === "admin") {
             showToast("Email already exists.", "error");
             return { success: false, message: "Email already exists." };
         }
+
+        const isProvider = role === "provider";
 
         const newUser = {
             id: Date.now(),
@@ -155,14 +195,31 @@ export function AppProvider({ children }) {
             email,
             password,
             role,
+            phone,
+            approved: isProvider ? false : true,
         };
 
         setUsers((prev) => [...prev, newUser]);
+
+        if (isProvider) {
+            showToast("Provider account created. Waiting for admin approval.");
+            return {
+                success: true,
+                message: "Provider account created. Please wait for admin approval.",
+            };
+        }
+
         showToast("Account created successfully.");
         return { success: true, message: "Account created successfully." };
     };
 
     const login = (email, password) => {
+        if (email === "admin" && password === "admin") {
+            setCurrentUser(hardcodedAdmin);
+            showToast("Welcome back, Administrator.");
+            return { success: true, message: "Admin login successful." };
+        }
+
         const found = users.find(
             (user) =>
                 user.email.toLowerCase() === email.toLowerCase() &&
@@ -175,6 +232,15 @@ export function AppProvider({ children }) {
         }
 
         setCurrentUser(found);
+
+        if (found.role === "provider" && !found.approved) {
+            showToast("Your provider account is waiting for admin approval.", "error");
+            return {
+                success: true,
+                message: "Login successful, but your provider account is still waiting for approval.",
+            };
+        }
+
         showToast(`Welcome back, ${found.name}.`);
         return { success: true, message: "Login successful." };
     };
@@ -184,12 +250,38 @@ export function AppProvider({ children }) {
         showToast("Logged out successfully.");
     };
 
+    const approveProvider = (userId) => {
+        let approvedUser = null;
+
+        setUsers((prev) =>
+            prev.map((user) => {
+                if (user.id === userId) {
+                    approvedUser = { ...user, approved: true };
+                    return approvedUser;
+                }
+                return user;
+            })
+        );
+
+        if (currentUser && currentUser.id === userId && approvedUser) {
+            setCurrentUser(approvedUser);
+        }
+
+        showToast("Provider approved successfully.");
+    };
+
     const addVehicle = (vehicle) => {
+        if (!currentUser || currentUser.role !== "provider" || !currentUser.approved) {
+            showToast("Only approved providers can add vehicles.", "error");
+            return;
+        }
+
         const newVehicle = normalizeVehicle({
             id: Date.now(),
             ...vehicle,
             available: true,
             image: pickRandomVehicleImage(),
+            providerId: currentUser.id,
         });
 
         setVehicles((prev) => [...prev, newVehicle]);
@@ -197,6 +289,11 @@ export function AppProvider({ children }) {
     };
 
     const updateVehicle = (id, updatedVehicle) => {
+        if (!currentUser || currentUser.role !== "provider" || !currentUser.approved) {
+            showToast("Only approved providers can update vehicles.", "error");
+            return;
+        }
+
         setVehicles((prev) =>
             prev.map((vehicle) =>
                 vehicle.id === id
@@ -213,14 +310,27 @@ export function AppProvider({ children }) {
     };
 
     const removeVehicle = (id) => {
+        if (!currentUser || currentUser.role !== "provider" || !currentUser.approved) {
+            showToast("Only approved providers can remove vehicles.", "error");
+            return;
+        }
+
         setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
         showToast("Vehicle removed successfully.");
     };
 
-    const reserveVehicle = (vehicleId) => {
+    const reserveVehicle = async (vehicleId) => {
         if (!currentUser) {
             showToast("Please log in first.", "error");
             return { success: false, message: "Please log in first." };
+        }
+
+        if (currentUser.role === "provider" && !currentUser.approved) {
+            showToast("Your provider account is still waiting for approval.", "error");
+            return {
+                success: false,
+                message: "Your provider account is still waiting for approval.",
+            };
         }
 
         const vehicle = vehicles.find((v) => v.id === vehicleId);
@@ -257,10 +367,21 @@ export function AppProvider({ children }) {
         }));
 
         showToast("Vehicle reserved successfully.");
+
+        await sendSMS(
+            currentUser.phone,
+            `Reservation Confirmed 🚗
+Vehicle: ${vehicle.name}
+Type: ${vehicle.type}
+City: ${vehicle.city}
+Amount: $${vehicle.price}
+Date: ${new Date().toLocaleString()}`
+        );
+
         return { success: true, message: "Vehicle reserved successfully." };
     };
 
-    const payReservation = (reservationId) => {
+    const payReservation = async (reservationId) => {
         const target = reservations.find((reservation) => reservation.id === reservationId);
 
         if (!target) {
@@ -287,6 +408,22 @@ export function AppProvider({ children }) {
         }));
 
         showToast("Payment completed successfully.");
+
+        await sendSMS(
+            currentUser?.phone,
+            `Payment Received ✅
+Vehicle: ${target.vehicleName}
+City: ${target.city}
+Amount: $${target.amount}
+Invoice sent to your email.`
+        );
+
+        await sendInvoiceEmail(currentUser?.email, {
+            name: currentUser?.name,
+            vehicle: target.vehicleName,
+            city: target.city,
+            amount: target.amount,
+        });
     };
 
     const returnVehicle = (reservationId) => {
@@ -349,6 +486,10 @@ export function AppProvider({ children }) {
         return reservations.filter((reservation) => reservation.userId === currentUser.id);
     }, [currentUser, reservations]);
 
+    const pendingProviders = useMemo(() => {
+        return users.filter((user) => user.role === "provider" && !user.approved);
+    }, [users]);
+
     return (
         <AppContext.Provider
             value={{
@@ -359,10 +500,12 @@ export function AppProvider({ children }) {
                 myReservations,
                 analytics,
                 toast,
+                pendingProviders,
                 showToast,
                 register,
                 login,
                 logout,
+                approveProvider,
                 addVehicle,
                 updateVehicle,
                 removeVehicle,

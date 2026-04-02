@@ -90,6 +90,17 @@ export default function ProviderDashboardPage() {
         );
     }
 
+    if (!currentUser.approved) {
+        return (
+            <div className="card">
+                <h2>Provider Dashboard</h2>
+                <p className="warning">
+                    Your provider account is waiting for admin approval. Once approved, your dashboard will unlock.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="provider-layout">
             <div className="card provider-form-card">
@@ -187,8 +198,8 @@ export default function ProviderDashboardPage() {
                                 <div className="vehicle-top-row">
                                     <h3>{vehicle.name}</h3>
                                     <span className={vehicle.available ? "badge success" : "badge danger"}>
-                    {vehicle.available ? "Available" : "Reserved"}
-                  </span>
+                                        {vehicle.available ? "Available" : "Reserved"}
+                                    </span>
                                 </div>
 
                                 <p className="muted vehicle-subtitle">

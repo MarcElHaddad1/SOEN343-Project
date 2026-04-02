@@ -37,6 +37,11 @@ export default function SearchVehiclesPage() {
         }
     };
 
+    const providerWaitingApproval =
+        currentUser &&
+        currentUser.role === "provider" &&
+        !currentUser.approved;
+
     return (
         <div className="page-grid">
             <div className="card">
@@ -49,6 +54,12 @@ export default function SearchVehiclesPage() {
 
                 {!currentUser && (
                     <p className="warning">You must log in before making a reservation.</p>
+                )}
+
+                {providerWaitingApproval && (
+                    <p className="warning">
+                        Your provider account is waiting for admin approval. Until then, some actions are restricted.
+                    </p>
                 )}
 
                 <div className="filters">
@@ -91,8 +102,8 @@ export default function SearchVehiclesPage() {
                                     <div className="vehicle-top-row">
                                         <h3>{vehicle.name}</h3>
                                         <span className={vehicle.available ? "badge success" : "badge danger"}>
-                      {vehicle.available ? "Available" : "Reserved"}
-                    </span>
+                                            {vehicle.available ? "Available" : "Reserved"}
+                                        </span>
                                     </div>
 
                                     <p className="muted vehicle-subtitle">
@@ -119,9 +130,13 @@ export default function SearchVehiclesPage() {
                                     <button
                                         className="btn primary-btn full-btn"
                                         onClick={() => handleReserve(vehicle.id)}
-                                        disabled={!vehicle.available}
+                                        disabled={!vehicle.available || providerWaitingApproval}
                                     >
-                                        {vehicle.available ? "Reserve Vehicle" : "Currently Unavailable"}
+                                        {!vehicle.available
+                                            ? "Currently Unavailable"
+                                            : providerWaitingApproval
+                                                ? "Waiting For Approval"
+                                                : "Reserve Vehicle"}
                                     </button>
                                 </div>
                             </div>

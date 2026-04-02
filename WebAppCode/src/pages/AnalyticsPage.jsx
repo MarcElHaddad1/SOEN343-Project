@@ -1,7 +1,7 @@
 import { useApp } from "../context/AppContext";
 
 export default function AnalyticsPage() {
-    const { analytics, reservations, vehicles } = useApp();
+    const { analytics, reservations, vehicles, currentUser } = useApp();
 
     const rentalsByCity = reservations.reduce((acc, reservation) => {
         acc[reservation.city] = (acc[reservation.city] || 0) + 1;
@@ -12,6 +12,22 @@ export default function AnalyticsPage() {
         acc[reservation.type] = (acc[reservation.type] || 0) + 1;
         return acc;
     }, {});
+
+    const providerWaitingApproval =
+        currentUser &&
+        currentUser.role === "provider" &&
+        !currentUser.approved;
+
+    if (providerWaitingApproval) {
+        return (
+            <div className="card">
+                <h2>Analytics Dashboard</h2>
+                <p className="warning">
+                    Your provider account is waiting for admin approval. Analytics will unlock after approval.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="analytics-layout">
