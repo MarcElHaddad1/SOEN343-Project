@@ -1,0 +1,25 @@
+{
+  "name": "mobility-rental-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node scripts/seed.js",
+    "images:download": "node scripts/downloadVehicleImagePool.js",
+    "images:backfill": "node scripts/backfillVehicleImagePool.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "nodemailer": "^6.9.16",
+    "openai": "^4.86.2",
+    "stripe": "^18.0.0",
+    "twilio": "^5.4.4"
+  }
+}
