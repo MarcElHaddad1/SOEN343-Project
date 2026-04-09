@@ -1,133 +1,75 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { useApp } from "../context/AppContext";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
 
 export default function Navbar() {
-    const { currentUser, logout } = useApp();
-    const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved) return saved === "dark";
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
 
-    const handleLogout = () => {
-        logout();
-        navigate("/");
-    };
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+    localStorage.setItem("theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
-    return (
-        <header className="navbar">
-            <div className="navbar-inner">
-                <div className="brand-block">
-                    <h1 className="brand">Mobility Rental POC</h1>
-                    <p className="subbrand">Simple web application demo</p>
-                </div>
+  const onLogout = () => {
+    logout();
+    navigate("/");
+  };
 
-                <nav className="nav-links">
-                    {!currentUser && (
-                        <>
-                            <NavLink
-                                to="/"
-                                className={({ isActive }) =>
-                                    isActive ? "nav-link active-link" : "nav-link"
-                                }
-                            >
-                                Login
-                            </NavLink>
+  return (
+    <header className="navbar">
+      <div className="container nav-inner">
+        <Link to="/search" className="brand">
+          <span className="brand-mark">MR</span>
+          <span className="brand-text">
+            <strong>Mobility Rental</strong>
+            <small>Premium City Fleet</small>
+          </span>
+        </Link>
 
-                            <NavLink
-                                to="/register"
-                                className={({ isActive }) =>
-                                    isActive ? "nav-link active-link" : "nav-link"
-                                }
-                            >
-                                Register
-                            </NavLink>
-                        </>
-                    )}
+        <nav className="nav-links">
+          {!user && <NavLink to="/">Login</NavLink>}
+          {!user && <NavLink to="/register">Register</NavLink>}
 
-                    {currentUser && currentUser.role === "admin" && (
-                        <>
-                            <NavLink
-                                to="/admin"
-                                className={({ isActive }) =>
-                                    isActive ? "nav-link active-link" : "nav-link"
-                                }
-                            >
-                                Admin Panel
-                            </NavLink>
+          {user?.role === "customer" && <NavLink to="/search">Search</NavLink>}
+          {user?.role === "customer" && <NavLink to="/bookings">Bookings</NavLink>}
+          {user?.role === "customer" && <NavLink to="/payments">Payments</NavLink>}
+          {user?.role === "customer" && <NavLink to="/notifications">Notifications</NavLink>}
+          {user?.role === "customer" && <NavLink to="/settings">Settings</NavLink>}
 
-                            <NavLink
-                                to="/analytics"
-                                className={({ isActive }) =>
-                                    isActive ? "nav-link active-link" : "nav-link"
-                                }
-                            >
-                                Analytics
-                            </NavLink>
-                        </>
-                    )}
+          {user?.role === "provider" && <NavLink to="/provider">Provider</NavLink>}
+          {user?.role === "provider" && <NavLink to="/search">Search</NavLink>}
+          {user?.role === "provider" && <NavLink to="/notifications">Notifications</NavLink>}
+          {user?.role === "provider" && <NavLink to="/settings">Settings</NavLink>}
 
-                    {currentUser && currentUser.role !== "admin" && (
-                        <>
-                            <NavLink
-                                to="/search"
-                                className={({ isActive }) =>
-                                    isActive ? "nav-link active-link" : "nav-link"
-                                }
-                            >
-                                Search
-                            </NavLink>
+          {user?.role === "admin" && <NavLink to="/admin">Admin</NavLink>}
+          {user?.role === "admin" && <NavLink to="/admin/stats">Stats</NavLink>}
+        </nav>
 
-                            <NavLink
-                                to="/reserve"
-                                className={({ isActive }) =>
-                                    isActive ? "nav-link active-link" : "nav-link"
-                                }
-                            >
-                                Reservations
-                            </NavLink>
-
-                            <NavLink
-                                to="/analytics"
-                                className={({ isActive }) =>
-                                    isActive ? "nav-link active-link" : "nav-link"
-                                }
-                            >
-                                Analytics
-                            </NavLink>
-
-                            {currentUser.role === "provider" && currentUser.approved && (
-                                <NavLink
-                                    to="/provider"
-                                    className={({ isActive }) =>
-                                        isActive ? "nav-link active-link" : "nav-link"
-                                    }
-                                >
-                                    Provider Dashboard
-                                </NavLink>
-                            )}
-                        </>
-                    )}
-                </nav>
-
-                <div className="user-box">
-                    {currentUser ? (
-                        <>
-                            <div className="user-pill">
-                                <span className="user-pill-label">Logged in as</span>
-                                <strong>
-                                    {currentUser.name} ({currentUser.role})
-                                </strong>
-                            </div>
-
-                            <button className="small-btn danger-btn" onClick={handleLogout}>
-                                Logout
-                            </button>
-                        </>
-                    ) : (
-                        <div className="user-pill guest-pill">
-                            <span className="user-pill-label">Status</span>
-                            <strong>Not logged in</strong>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </header>
-    );
+        <div className="nav-user">
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={() => setDarkMode((prev) => !prev)}
+            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {darkMode ? "Light" : "Dark"}
+          </button>
+          {user ? (
+            <>
+              <span className="user-chip">{user.name} ({user.role})</span>
+              <button className="logout-btn" onClick={onLogout}>Logout</button>
+            </>
+          ) : (
+            <span className="user-chip">Guest</span>
+          )}
+        </div>
+      </div>
+    </header>
+  );
 }
