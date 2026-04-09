@@ -17,11 +17,27 @@ const logoDir = path.resolve(__dirname, "../public/LOGO");
 
 export function createApp() {
   const app = express();
+  const allowedOrigins = new Set(
+    (process.env.FRONTEND_URLS || env.frontendUrl || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  );
+
+  // Keep local dev origins available in production-safe way.
+  allowedOrigins.add("http://localhost:5173");
+  allowedOrigins.add("http://127.0.0.1:5173");
 
   app.use(
     cors({
-      origin: env.frontendUrl,
-      credentials: true
+      origin(origin, callback) {
+        if (!origin || allowedOrigins.has(origin)) {
+          return callback(null, true);
+        }
+        return callback(new Error("CORS origin not allowed"));
+      },
+      credentials: true,
+      optionsSuccessStatus: 204
     })
   );
 
