@@ -5,7 +5,10 @@ import ToastViewport from "./components/ToastViewport";
 import { useAuth } from "./context/AuthContext";
 import AdminPage from "./pages/AdminPage";
 import AdminStatsPage from "./pages/AdminStatsPage";
+<<<<<<< HEAD
 import AdminPromosPage from "./pages/AdminPromosPage";
+=======
+>>>>>>> Testing
 import BookingsPage from "./pages/BookingsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
@@ -53,7 +56,10 @@ export default function App() {
         {/* Admin */}
         <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><AdminPage /></ProtectedRoute>} />
         <Route path="/admin/stats" element={<ProtectedRoute roles={["admin"]}><AdminStatsPage /></ProtectedRoute>} />
+<<<<<<< HEAD
         <Route path="/admin/promos" element={<ProtectedRoute roles={["admin"]}><AdminPromosPage /></ProtectedRoute>} />
+=======
+>>>>>>> Testing
       </Routes>
     </>
   );

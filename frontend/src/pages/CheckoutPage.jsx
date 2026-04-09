@@ -3,7 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import { apiRequest } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+<<<<<<< HEAD
 import PromoCodeInput from "../components/PromoCodeInput";
+=======
+>>>>>>> Testing
 
 export default function CheckoutPage() {
   const { id } = useParams();
@@ -14,8 +17,14 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [days, setDays] = useState(0);
+<<<<<<< HEAD
   const [promo, setPromo] = useState(null); // { code, discountedAmount, savings }
 
+=======
+
+  // Fix: compute today's date string for the min attribute on date inputs
+  // so users cannot accidentally select dates in the past.
+>>>>>>> Testing
   const todayStr = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
@@ -24,17 +33,31 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!form.startDate || !form.endDate) { setDays(0); return; }
+<<<<<<< HEAD
     const start = new Date(form.startDate);
     const end = new Date(form.endDate);
+=======
+
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+
+>>>>>>> Testing
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
       setDays(0);
       return;
     }
+<<<<<<< HEAD
     setDays(Math.max(Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)), 1));
   }, [form.startDate, form.endDate]);
 
   // Clear promo when dates change so the discount stays accurate
   useEffect(() => { setPromo(null); }, [form.startDate, form.endDate]);
+=======
+
+    const diff = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+    setDays(Math.max(diff, 1));
+  }, [form.startDate, form.endDate]);
+>>>>>>> Testing
 
   const onChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
@@ -46,6 +69,10 @@ export default function CheckoutPage() {
       showToast("Start and end date are required", "error");
       return;
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> Testing
     if (new Date(form.endDate) <= new Date(form.startDate)) {
       setError("End date must be after start date");
       showToast("End date must be after start date", "error");
@@ -59,12 +86,16 @@ export default function CheckoutPage() {
       const data = await apiRequest("/api/bookings/checkout/session", {
         method: "POST",
         token,
+<<<<<<< HEAD
         body: {
           vehicleId: id,
           startDate: form.startDate,
           endDate: form.endDate,
           promoCode: promo?.code || undefined
         }
+=======
+        body: { vehicleId: id, startDate: form.startDate, endDate: form.endDate }
+>>>>>>> Testing
       });
       window.location.href = data.url;
     } catch (err) {
@@ -87,8 +118,12 @@ export default function CheckoutPage() {
     );
   }
 
+<<<<<<< HEAD
   const baseTotal = days > 0 ? days * vehicle.pricePerDay : 0;
   const finalTotal = promo ? promo.discountedAmount : baseTotal;
+=======
+  const estimatedTotal = days > 0 ? days * vehicle.pricePerDay : 0;
+>>>>>>> Testing
 
   return (
     <div className="container checkout-wrap">
@@ -103,6 +138,10 @@ export default function CheckoutPage() {
 
           <form onSubmit={onSubmit} className="form checkout-form">
             <label>Start Date</label>
+<<<<<<< HEAD
+=======
+            {/* Fix: min={todayStr} prevents selecting dates in the past */}
+>>>>>>> Testing
             <input
               type="date"
               name="startDate"
@@ -122,6 +161,7 @@ export default function CheckoutPage() {
               required
             />
 
+<<<<<<< HEAD
             {/* Promo code — only shown when dates are selected so amount is known */}
             {baseTotal > 0 && (
               <>
@@ -134,6 +174,8 @@ export default function CheckoutPage() {
               </>
             )}
 
+=======
+>>>>>>> Testing
             <button type="submit" disabled={busy}>
               {busy ? "Redirecting..." : "Continue to Stripe"}
             </button>
@@ -147,7 +189,10 @@ export default function CheckoutPage() {
           <h3>{vehicle.name}</h3>
           <p className="meta-line">{vehicle.type} in {vehicle.city}</p>
           <p className="address-line">{vehicle.addressFormatted}</p>
+<<<<<<< HEAD
 
+=======
+>>>>>>> Testing
           <div className="summary-line">
             <span>Rate</span>
             <strong>${vehicle.pricePerDay}/day</strong>
@@ -156,6 +201,7 @@ export default function CheckoutPage() {
             <span>Duration</span>
             <strong>{days} day(s)</strong>
           </div>
+<<<<<<< HEAD
           <div className="summary-line">
             <span>Subtotal</span>
             <strong>${baseTotal}</strong>
@@ -171,6 +217,11 @@ export default function CheckoutPage() {
           <div className="summary-line total-line">
             <span>Total</span>
             <strong>${finalTotal.toFixed(2)}</strong>
+=======
+          <div className="summary-line total-line">
+            <span>Estimated Total</span>
+            <strong>${estimatedTotal}</strong>
+>>>>>>> Testing
           </div>
         </aside>
       </div>
