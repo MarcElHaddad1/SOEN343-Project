@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { apiRequest } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import PromoCodeInput from "../components/PromoCodeInput";
 
 export default function CheckoutPage() {
   const { id } = useParams();
@@ -13,9 +14,8 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [days, setDays] = useState(0);
+  const [promo, setPromo] = useState(null); // { code, discountedAmount, savings }
 
-  // Fix: compute today's date string for the min attribute on date inputs
-  // so users cannot accidentally select dates in the past.
   const todayStr = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
@@ -24,18 +24,17 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!form.startDate || !form.endDate) { setDays(0); return; }
-
     const start = new Date(form.startDate);
     const end = new Date(form.endDate);
-
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
       setDays(0);
       return;
     }
-
-    const diff = Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-    setDays(Math.max(diff, 1));
+    setDays(Math.max(Math.ceil((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)), 1));
   }, [form.startDate, form.endDate]);
+
+  // Clear promo when dates change so the discount stays accurate
+  useEffect(() => { setPromo(null); }, [form.startDate, form.endDate]);
 
   const onChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
@@ -47,7 +46,6 @@ export default function CheckoutPage() {
       showToast("Start and end date are required", "error");
       return;
     }
-
     if (new Date(form.endDate) <= new Date(form.startDate)) {
       setError("End date must be after start date");
       showToast("End date must be after start date", "error");
@@ -61,7 +59,12 @@ export default function CheckoutPage() {
       const data = await apiRequest("/api/bookings/checkout/session", {
         method: "POST",
         token,
-        body: { vehicleId: id, startDate: form.startDate, endDate: form.endDate }
+        body: {
+          vehicleId: id,
+          startDate: form.startDate,
+          endDate: form.endDate,
+          promoCode: promo?.code || undefined
+        }
       });
       window.location.href = data.url;
     } catch (err) {
@@ -84,7 +87,8 @@ export default function CheckoutPage() {
     );
   }
 
-  const estimatedTotal = days > 0 ? days * vehicle.pricePerDay : 0;
+  const baseTotal = days > 0 ? days * vehicle.pricePerDay : 0;
+  const finalTotal = promo ? promo.discountedAmount : baseTotal;
 
   return (
     <div className="container checkout-wrap">
@@ -99,7 +103,6 @@ export default function CheckoutPage() {
 
           <form onSubmit={onSubmit} className="form checkout-form">
             <label>Start Date</label>
-            {/* Fix: min={todayStr} prevents selecting dates in the past */}
             <input
               type="date"
               name="startDate"
@@ -119,6 +122,18 @@ export default function CheckoutPage() {
               required
             />
 
+            {/* Promo code — only shown when dates are selected so amount is known */}
+            {baseTotal > 0 && (
+              <>
+                <label>Promo Code (optional)</label>
+                <PromoCodeInput
+                  amount={baseTotal}
+                  onApply={(result) => setPromo(result)}
+                  onRemove={() => setPromo(null)}
+                />
+              </>
+            )}
+
             <button type="submit" disabled={busy}>
               {busy ? "Redirecting..." : "Continue to Stripe"}
             </button>
@@ -132,6 +147,7 @@ export default function CheckoutPage() {
           <h3>{vehicle.name}</h3>
           <p className="meta-line">{vehicle.type} in {vehicle.city}</p>
           <p className="address-line">{vehicle.addressFormatted}</p>
+
           <div className="summary-line">
             <span>Rate</span>
             <strong>${vehicle.pricePerDay}/day</strong>
@@ -140,9 +156,21 @@ export default function CheckoutPage() {
             <span>Duration</span>
             <strong>{days} day(s)</strong>
           </div>
+          <div className="summary-line">
+            <span>Subtotal</span>
+            <strong>${baseTotal}</strong>
+          </div>
+
+          {promo && (
+            <div className="summary-line promo-savings-line">
+              <span>Promo ({promo.code})</span>
+              <strong className="pill-ok">− ${promo.savings.toFixed(2)}</strong>
+            </div>
+          )}
+
           <div className="summary-line total-line">
-            <span>Estimated Total</span>
-            <strong>${estimatedTotal}</strong>
+            <span>Total</span>
+            <strong>${finalTotal.toFixed(2)}</strong>
           </div>
         </aside>
       </div>

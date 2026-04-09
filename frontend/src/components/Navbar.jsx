@@ -49,6 +49,7 @@ export default function Navbar() {
 
           {user?.role === "admin" && <NavLink to="/admin">Admin</NavLink>}
           {user?.role === "admin" && <NavLink to="/admin/stats">Stats</NavLink>}
+          {user?.role === "admin" && <NavLink to="/admin/promos">Promos</NavLink>}
         </nav>
 
         <div className="nav-user">
