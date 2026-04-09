@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import twilio from "twilio";
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
@@ -9,18 +12,18 @@ app.use(express.json());
 
 // ===== TWILIO =====
 const client = twilio(
-    "AC1dc97bc1efbd8728779b6e4dd40f8d02",
-    "acb539dab82531d215d58e863deae6eb"
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN
 );
 
-const TWILIO_NUMBER = "+14385339599";
+const TWILIO_NUMBER = process.env.TWILIO_PHONE_NUMBER;
 
 // ===== EMAIL =====
 const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: "kijijibumper@gmail.com",
-        pass: "rvlswmohpmounzbj",
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
     },
 });
 
@@ -48,7 +51,7 @@ app.post("/send-invoice", async (req, res) => {
 
     try {
         await transporter.sendMail({
-            from: "kijijibumper@gmail.com",
+            from: process.env.EMAIL_USER,
             to: email,
             subject: "Your Reservation Invoice",
             text: `
@@ -73,6 +76,7 @@ Thank you for your reservation.
     }
 });
 
-app.listen(5000, () => {
-    console.log("Server running on http://localhost:5000");
+const PORT = Number(process.env.PORT || 5000);
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
