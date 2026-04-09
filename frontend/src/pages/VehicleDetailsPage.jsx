@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { apiRequest } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import ReviewSection from "../components/ReviewSection";
 
 export default function VehicleDetailsPage() {
   const { id } = useParams();
@@ -46,6 +47,13 @@ export default function VehicleDetailsPage() {
             {vehicle.mileageKm ? <p className="meta-line">{Number(vehicle.mileageKm).toLocaleString()} km</p> : null}
             <p className="address-line">{vehicle.addressFormatted}</p>
             <p className="meta-line">Provider: {vehicle.providerId?.name} ({vehicle.providerId?.email})</p>
+            {vehicle.avgRating && (
+              <p className="meta-line review-inline">
+                {"★".repeat(Math.round(vehicle.avgRating))}{"☆".repeat(5 - Math.round(vehicle.avgRating))}
+                {" "}<strong>{vehicle.avgRating}</strong>
+                <span className="review-count"> ({vehicle.reviewCount} review{vehicle.reviewCount !== 1 ? "s" : ""})</span>
+              </p>
+            )}
             <div className="vehicle-footer">
               <p className="price">${vehicle.pricePerDay}<small>/day</small></p>
               <button className="return-btn" disabled={!vehicle.available || !canBook} onClick={() => navigate(`/checkout/${vehicle._id}`)}>
@@ -66,6 +74,8 @@ export default function VehicleDetailsPage() {
           />
         </article>
       </section>
+
+      <ReviewSection vehicleId={vehicle._id} />
     </div>
   );
 }
