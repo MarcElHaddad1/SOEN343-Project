@@ -85,6 +85,11 @@ export default function SearchPage() {
                     <span className={`vehicle-pill ${vehicle.available ? "pill-ok" : "pill-bad"}`}>
                       {vehicle.available ? "Available" : "Unavailable"}
                     </span>
+                    {vehicle.avgRating && (
+                      <span className="vehicle-pill">
+                        {"★".repeat(Math.round(vehicle.avgRating))} {vehicle.avgRating}
+                      </span>
+                    )}
                   </div>
                   <p className="address-line">{vehicle.addressFormatted}</p>
                   <div className="vehicle-footer">
