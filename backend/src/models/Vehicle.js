@@ -12,7 +12,9 @@ const vehicleSchema = new mongoose.Schema(
     lng: { type: Number, required: true },
     available: { type: Boolean, default: true },
     imageUrl: { type: String, default: "" },
-    providerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
+    providerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    avgRating: { type: Number, default: null },
+    reviewCount: { type: Number, default: 0 }
   },
   { timestamps: true }
 );

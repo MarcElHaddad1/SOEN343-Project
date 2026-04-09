@@ -7,6 +7,7 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import mapsRoutes from "./routes/mapsRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 export function createApp() {
   const app = express();
@@ -30,6 +31,7 @@ export function createApp() {
   app.use("/api/admin", adminRoutes);
   app.use("/api/maps", mapsRoutes);
   app.use("/api/notifications", notificationRoutes);
+  app.use("/api/reviews", reviewRoutes);
 
   app.use((err, _req, res, _next) => {
     console.error(err);
