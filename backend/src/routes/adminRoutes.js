@@ -4,6 +4,8 @@ import { User } from "../models/User.js";
 import { Vehicle } from "../models/Vehicle.js";
 import { Booking } from "../models/Booking.js";
 import { Payment } from "../models/Payment.js";
+import { ParkingSpot } from "../models/ParkingSpot.js";
+import { ParkingReservation } from "../models/ParkingReservation.js";
 import { sendEventNotifications } from "../services/notificationService.js";
 
 const router = express.Router();
@@ -24,7 +26,10 @@ router.get("/users", authRequired, requireRole("admin"), async (_req, res) => {
 });
 
 router.get("/stats", authRequired, requireRole("admin"), async (_req, res) => {
-  const [usersTotal, customersTotal, providersTotal, providersApproved, providersPending, providersRejected, vehiclesTotal, vehiclesAvailable, bookingsTotal, bookingsCompleted, paymentAgg] = await Promise.all([
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const [usersTotal, customersTotal, providersTotal, providersApproved, providersPending, providersRejected, vehiclesTotal, vehiclesAvailable, bookingsTotal, bookingsCompleted, paymentAgg, parkingSpotsTotal, parkingSpotsAvailable, parkingReservationsTotal, parkingReservedByCity, scootersCurrentlyAvailable, tripsCompletedToday, bikesCurrentlyRentedAgg, mobilityUsageAgg, usagePerCityAgg, activeRentalsByCityAgg, parkingCapacityByCityAgg] = await Promise.all([
     User.countDocuments({}),
     User.countDocuments({ role: "customer" }),
     User.countDocuments({ role: "provider" }),
@@ -38,10 +43,96 @@ router.get("/stats", authRequired, requireRole("admin"), async (_req, res) => {
     Payment.aggregate([
       { $match: { status: "succeeded" } },
       { $group: { _id: null, totalRevenue: { $sum: "$amount" }, totalPayments: { $sum: 1 } } }
+    ]),
+    ParkingSpot.countDocuments({}),
+    ParkingSpot.countDocuments({ capacityAvailable: { $gt: 0 } }),
+    ParkingReservation.countDocuments({}),
+    ParkingReservation.aggregate([
+      { $match: { status: "reserved" } },
+      { $group: { _id: "$city", activeReservations: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]),
+    Vehicle.countDocuments({ available: true, type: { $regex: "^scooter$", $options: "i" } }),
+    Booking.countDocuments({ status: "completed", updatedAt: { $gte: startOfToday } }),
+    Booking.aggregate([
+      { $match: { status: "confirmed" } },
+      {
+        $lookup: {
+          from: "vehicles",
+          localField: "vehicleId",
+          foreignField: "_id",
+          as: "vehicle"
+        }
+      },
+      { $unwind: "$vehicle" },
+      { $match: { "vehicle.type": { $regex: "^bike$", $options: "i" } } },
+      { $count: "count" }
+    ]),
+    Booking.aggregate([
+      {
+        $lookup: {
+          from: "vehicles",
+          localField: "vehicleId",
+          foreignField: "_id",
+          as: "vehicle"
+        }
+      },
+      { $unwind: "$vehicle" },
+      {
+        $group: {
+          _id: { $toLower: "$vehicle.type" },
+          trips: { $sum: 1 }
+        }
+      }
+    ]),
+    Booking.aggregate([
+      {
+        $lookup: {
+          from: "vehicles",
+          localField: "vehicleId",
+          foreignField: "_id",
+          as: "vehicle"
+        }
+      },
+      { $unwind: "$vehicle" },
+      { $group: { _id: "$vehicle.city", trips: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]),
+    Booking.aggregate([
+      { $match: { status: "confirmed" } },
+      {
+        $lookup: {
+          from: "vehicles",
+          localField: "vehicleId",
+          foreignField: "_id",
+          as: "vehicle"
+        }
+      },
+      { $unwind: "$vehicle" },
+      { $group: { _id: "$vehicle.city", activeRentals: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]),
+    ParkingSpot.aggregate([
+      {
+        $group: {
+          _id: "$city",
+          totalCapacity: { $sum: "$capacityTotal" },
+          availableCapacity: { $sum: "$capacityAvailable" }
+        }
+      },
+      { $sort: { _id: 1 } }
     ])
   ]);
 
   const totals = paymentAgg[0] || { totalRevenue: 0, totalPayments: 0 };
+  const bikesCurrentlyRented = bikesCurrentlyRentedAgg[0]?.count || 0;
+  const bikeTrips = mobilityUsageAgg.find((item) => item._id === "bike")?.trips || 0;
+  const scooterTrips = mobilityUsageAgg.find((item) => item._id === "scooter")?.trips || 0;
+  const mostUsedMobilityOption = bikeTrips === scooterTrips
+    ? "tie"
+    : bikeTrips > scooterTrips
+      ? "bike"
+      : "scooter";
 
   return res.json({
     metrics: {
@@ -56,7 +147,43 @@ router.get("/stats", authRequired, requireRole("admin"), async (_req, res) => {
       bookingsTotal,
       bookingsCompleted,
       totalRevenue: totals.totalRevenue,
-      totalPayments: totals.totalPayments
+      totalPayments: totals.totalPayments,
+      parkingSpotsTotal,
+      parkingSpotsAvailable,
+      parkingReservationsTotal,
+      parkingReservedByCity: parkingReservedByCity.map((item) => ({
+        city: item._id,
+        activeReservations: item.activeReservations
+      })),
+      bikesCurrentlyRented,
+      scootersCurrentlyAvailable,
+      tripsCompletedToday,
+      mobilityUsage: {
+        bikeTrips,
+        scooterTrips,
+        mostUsedMobilityOption
+      },
+      usagePerCity: usagePerCityAgg.map((item) => ({
+        city: item._id,
+        trips: item.trips
+      })),
+      activeRentalsByCity: activeRentalsByCityAgg.map((item) => ({
+        city: item._id,
+        activeRentals: item.activeRentals
+      })),
+      parkingUtilizationByCity: parkingCapacityByCityAgg.map((item) => {
+        const reservedCapacity = Math.max(item.totalCapacity - item.availableCapacity, 0);
+        const utilizationPct = item.totalCapacity
+          ? (reservedCapacity / item.totalCapacity) * 100
+          : 0;
+        return {
+          city: item._id,
+          totalCapacity: item.totalCapacity,
+          reservedCapacity,
+          availableCapacity: item.availableCapacity,
+          utilizationPct
+        };
+      })
     }
   });
 });

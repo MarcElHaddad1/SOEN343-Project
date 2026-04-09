@@ -6,6 +6,8 @@ import { Vehicle } from "../models/Vehicle.js";
 import { Booking } from "../models/Booking.js";
 import { Payment } from "../models/Payment.js";
 import { User } from "../models/User.js";
+import { ParkingReservation } from "../models/ParkingReservation.js";
+import { ParkingSpot } from "../models/ParkingSpot.js";
 import { sendEventNotifications } from "../services/notificationService.js";
 
 const router = express.Router();
@@ -29,20 +31,28 @@ router.get("/payments/my", authRequired, requireRole("customer"), async (req, re
   const bookings = await Booking.find({ userId: req.auth.sub }).select("_id vehicleId");
   const bookingIds = bookings.map((b) => b._id);
   const vehicleIds = bookings.map((b) => b.vehicleId);
+  const parkingReservations = await ParkingReservation.find({
+    userId: req.auth.sub,
+    stripePaymentIntentId: { $ne: "" }
+  }).select("_id parkingSpotId stripePaymentIntentId totalAmount createdAt status");
+  const parkingSpotIds = parkingReservations.map((r) => r.parkingSpotId);
 
-  const [payments, vehicles] = await Promise.all([
+  const [payments, vehicles, parkingSpots] = await Promise.all([
     Payment.find({ bookingId: { $in: bookingIds } }).sort({ createdAt: -1 }),
-    Vehicle.find({ _id: { $in: vehicleIds } }).select("name type city")
+    Vehicle.find({ _id: { $in: vehicleIds } }).select("name type city"),
+    ParkingSpot.find({ _id: { $in: parkingSpotIds } }).select("name city")
   ]);
 
   const bookingMap = new Map(bookings.map((b) => [b._id.toString(), b]));
   const vehicleMap = new Map(vehicles.map((v) => [v._id.toString(), v]));
+  const parkingSpotMap = new Map(parkingSpots.map((s) => [s._id.toString(), s]));
 
-  const items = payments.map((payment) => {
+  const vehicleItems = payments.map((payment) => {
     const booking = bookingMap.get(payment.bookingId.toString());
     const vehicle = booking ? vehicleMap.get(booking.vehicleId.toString()) : null;
 
     return {
+      kind: "vehicle",
       id: payment._id,
       amount: payment.amount,
       status: payment.status,
@@ -59,6 +69,30 @@ router.get("/payments/my", authRequired, requireRole("customer"), async (req, re
         : null
     };
   });
+
+  const parkingItems = parkingReservations.map((reservation) => {
+    const spot = parkingSpotMap.get(reservation.parkingSpotId.toString());
+    return {
+      kind: "parking",
+      id: reservation._id,
+      amount: reservation.totalAmount,
+      status: reservation.status === "reserved" ? "succeeded" : reservation.status,
+      stripePaymentIntentId: reservation.stripePaymentIntentId,
+      cardholderName: "Stripe Checkout",
+      cardLast4: "N/A",
+      createdAt: reservation.createdAt,
+      parking: spot
+        ? {
+            name: spot.name,
+            city: spot.city
+          }
+        : null
+    };
+  });
+
+  const items = [...vehicleItems, ...parkingItems].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
   return res.json({ items });
 });

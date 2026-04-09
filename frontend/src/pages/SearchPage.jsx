@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiRequest } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 const defaultFilters = {
   q: "",
@@ -15,9 +16,11 @@ const defaultFilters = {
 };
 
 export default function SearchPage() {
+  const { token } = useAuth();
   const [filters, setFilters] = useState(defaultFilters);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState({ items: [], meta: { total: 0, pages: 1, page: 1 } });
+  const [recommendation, setRecommendation] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -39,11 +42,39 @@ export default function SearchPage() {
     };
   }, [filters]);
 
+  useEffect(() => {
+    apiRequest("/api/auth/recommendations/me", { token })
+      .then((resp) => setRecommendation(resp?.recommendation?.message || ""))
+      .catch(() => setRecommendation(""));
+  }, [token]);
+
   const types = useMemo(() => ["", "Car", "Bike", "Scooter", "E-Bike", "SUV"], []);
   const cities = useMemo(() => ["", "Montreal", "Toronto", "Vancouver", "Calgary", "Ottawa"], []);
 
   return (
     <div className="container">
+      {recommendation ? (
+        <section className="card" style={{ marginBottom: 12 }}>
+          <h3>Recommended For You</h3>
+          <p className="auth-subtext">{recommendation}</p>
+        </section>
+      ) : null}
+
+      <section className="card" style={{ marginBottom: 12 }}>
+        <h3>Public Transit Coordination</h3>
+        <p className="auth-subtext">
+          For live schedules, delays, and transit planning reliability, continue to the official STM transit portal.
+        </p>
+        <a
+          className="btn-link btn-link-strong"
+          href="https://www.stm.info/en"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Open STM Transit
+        </a>
+      </section>
+
       <div className="toolbar">
         <input
           placeholder="Search name, type, city, address"

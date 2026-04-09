@@ -7,12 +7,18 @@ export default function BookingsPage() {
   const { token } = useAuth();
   const { showToast } = useToast();
   const [items, setItems] = useState([]);
+  const [parkingItems, setParkingItems] = useState([]);
+  const [recommendation, setRecommendation] = useState("");
   const [error, setError] = useState("");
 
   async function load() {
     try {
-      const data = await apiRequest("/api/bookings/my", { token });
-      setItems(data.items || []);
+      const [vehicleData, parkingData] = await Promise.all([
+        apiRequest("/api/bookings/my", { token }),
+        apiRequest("/api/parking/reservations/my", { token })
+      ]);
+      setItems(vehicleData.items || []);
+      setParkingItems(parkingData.items || []);
     } catch (err) {
       setError(err.message);
     }
@@ -20,6 +26,12 @@ export default function BookingsPage() {
 
   useEffect(() => {
     load();
+  }, [token]);
+
+  useEffect(() => {
+    apiRequest("/api/auth/recommendations/me", { token })
+      .then((resp) => setRecommendation(resp?.recommendation?.message || ""))
+      .catch(() => setRecommendation(""));
   }, [token]);
 
   async function returnVehicle(bookingId) {
@@ -38,6 +50,44 @@ export default function BookingsPage() {
     <div className="container">
       <h1>My Bookings</h1>
       {error && <p className="error">{error}</p>}
+      {recommendation ? (
+        <section className="card" style={{ marginBottom: 12 }}>
+          <h3>Recommended For You</h3>
+          <p className="auth-subtext">{recommendation}</p>
+        </section>
+      ) : null}
+
+      <section className="table-wrap" style={{ marginBottom: 14 }}>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Parking Spot</th>
+              <th>City</th>
+              <th>Date Range</th>
+              <th>Total</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parkingItems.length === 0 ? (
+              <tr><td colSpan={5}>No parking reservations yet.</td></tr>
+            ) : parkingItems.map((item) => (
+              <tr key={item._id}>
+                <td>{item.parkingSpotId?.name || "Parking Spot"}</td>
+                <td>{item.city}</td>
+                <td>{new Date(item.startTime).toLocaleDateString()} - {new Date(item.endTime).toLocaleDateString()}</td>
+                <td>${item.totalAmount}</td>
+                <td>
+                  <span className={`vehicle-pill ${item.status === "reserved" ? "" : item.status === "completed" ? "pill-ok" : "pill-bad"}`}>
+                    {item.status}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
       <div className="list booking-grid">
         {items.map((booking) => (
           <article key={booking._id} className="list-card booking-card">

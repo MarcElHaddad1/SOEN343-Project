@@ -39,12 +39,14 @@ export default function Navbar() {
           {!user && <NavLink to="/register">Register</NavLink>}
 
           {user?.role === "customer" && <NavLink to="/search">Search</NavLink>}
+          {user?.role === "customer" && <NavLink to="/parking">Park</NavLink>}
           {user?.role === "customer" && <NavLink to="/bookings">Bookings</NavLink>}
           {user?.role === "customer" && <NavLink to="/payments">Payments</NavLink>}
           {user?.role === "customer" && <NavLink to="/notifications">Notifications</NavLink>}
           {user?.role === "customer" && <NavLink to="/settings">Settings</NavLink>}
 
           {user?.role === "provider" && <NavLink to="/provider">Provider</NavLink>}
+          {user?.role === "provider" && <NavLink to="/provider/parking">Parking Spots</NavLink>}
           {user?.role === "provider" && <NavLink to="/search">Search</NavLink>}
           {user?.role === "provider" && <NavLink to="/notifications">Notifications</NavLink>}
           {user?.role === "provider" && <NavLink to="/settings">Settings</NavLink>}

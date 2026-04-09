@@ -68,6 +68,13 @@ export default function AdminStatsPage() {
             <article className="stat-card"><span>Completed Bookings</span><strong>{metrics.bookingsCompleted}</strong></article>
             <article className="stat-card"><span>Payments Succeeded</span><strong>{metrics.totalPayments}</strong></article>
             <article className="stat-card"><span>Total Revenue</span><strong>${Number(metrics.totalRevenue || 0).toFixed(2)}</strong></article>
+            <article className="stat-card"><span>Parking Spots</span><strong>{metrics.parkingSpotsTotal || 0}</strong></article>
+            <article className="stat-card"><span>Parking Spots Available</span><strong>{metrics.parkingSpotsAvailable || 0}</strong></article>
+            <article className="stat-card"><span>Parking Reservations</span><strong>{metrics.parkingReservationsTotal || 0}</strong></article>
+            <article className="stat-card"><span>Bicycles Currently Rented</span><strong>{metrics.bikesCurrentlyRented || 0}</strong></article>
+            <article className="stat-card"><span>Scooters Currently Available</span><strong>{metrics.scootersCurrentlyAvailable || 0}</strong></article>
+            <article className="stat-card"><span>Trips Completed Today</span><strong>{metrics.tripsCompletedToday || 0}</strong></article>
+            <article className="stat-card"><span>Most Used Mobility</span><strong>{metrics.mobilityUsage?.mostUsedMobilityOption || "-"}</strong></article>
           </div>
 
           {derived && (
@@ -78,6 +85,115 @@ export default function AdminStatsPage() {
               <span>Payment Success Rate: <strong>{derived.paymentSuccessRate.toFixed(1)}%</strong></span>
             </div>
           )}
+
+          <div className="table-wrap" style={{ marginBottom: 12 }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>City</th>
+                  <th>Active Parking Reservations</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(metrics.parkingReservedByCity || []).length === 0 ? (
+                  <tr><td colSpan={2}>No active parking reservations by city.</td></tr>
+                ) : (metrics.parkingReservedByCity || []).map((item) => (
+                  <tr key={item.city}>
+                    <td>{item.city}</td>
+                    <td>{item.activeReservations}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="table-wrap" style={{ marginBottom: 12 }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Mobility Type</th>
+                  <th>Total Trips</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Bike</td>
+                  <td>{metrics.mobilityUsage?.bikeTrips || 0}</td>
+                </tr>
+                <tr>
+                  <td>Scooter</td>
+                  <td>{metrics.mobilityUsage?.scooterTrips || 0}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="table-wrap" style={{ marginBottom: 12 }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>City</th>
+                  <th>Active Rentals</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(metrics.activeRentalsByCity || []).length === 0 ? (
+                  <tr><td colSpan={2}>No active rentals by city.</td></tr>
+                ) : (metrics.activeRentalsByCity || []).map((item) => (
+                  <tr key={item.city}>
+                    <td>{item.city}</td>
+                    <td>{item.activeRentals}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="table-wrap" style={{ marginBottom: 12 }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>City</th>
+                  <th>Total Trips</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(metrics.usagePerCity || []).length === 0 ? (
+                  <tr><td colSpan={2}>No trip usage by city yet.</td></tr>
+                ) : (metrics.usagePerCity || []).map((item) => (
+                  <tr key={item.city}>
+                    <td>{item.city}</td>
+                    <td>{item.trips}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="table-wrap" style={{ marginBottom: 12 }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>City</th>
+                  <th>Reserved Capacity</th>
+                  <th>Total Capacity</th>
+                  <th>Utilization</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(metrics.parkingUtilizationByCity || []).length === 0 ? (
+                  <tr><td colSpan={4}>No parking capacity data by city.</td></tr>
+                ) : (metrics.parkingUtilizationByCity || []).map((item) => (
+                  <tr key={item.city}>
+                    <td>{item.city}</td>
+                    <td>{item.reservedCapacity}</td>
+                    <td>{item.totalCapacity}</td>
+                    <td>{Number(item.utilizationPct || 0).toFixed(1)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 

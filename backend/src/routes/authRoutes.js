@@ -1,6 +1,7 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import { User } from "../models/User.js";
+import { Vehicle } from "../models/Vehicle.js";
 import { signToken, authRequired } from "../middleware/auth.js";
 import { sanitizeUser } from "../utils/sanitize.js";
 import { sendEventNotifications } from "../services/notificationService.js";
@@ -29,7 +30,9 @@ router.post("/register", async (req, res) => {
     passwordHash,
     role,
     approved,
-    rejected: false
+    rejected: false,
+    preferredCity: "Montreal",
+    preferredMobilityType: "scooter"
   });
 
   sendEventNotifications({
@@ -78,7 +81,7 @@ router.get("/me", authRequired, async (req, res) => {
 });
 
 router.patch("/me", authRequired, async (req, res) => {
-  const { name, email, phone, addressFormatted, addressLat, addressLng } = req.body;
+  const { name, email, phone, addressFormatted, addressLat, addressLng, preferredCity, preferredMobilityType } = req.body;
   const user = await User.findById(req.auth.sub);
 
   if (!user) {
@@ -98,10 +101,48 @@ router.patch("/me", authRequired, async (req, res) => {
   if (addressFormatted !== undefined) user.addressFormatted = addressFormatted;
   if (addressLat !== undefined) user.addressLat = addressLat;
   if (addressLng !== undefined) user.addressLng = addressLng;
+  if (preferredCity !== undefined) user.preferredCity = preferredCity;
+  if (preferredMobilityType !== undefined && ["bike", "scooter"].includes(String(preferredMobilityType).toLowerCase())) {
+    user.preferredMobilityType = String(preferredMobilityType).toLowerCase();
+  }
 
   await user.save();
 
   return res.json({ user: sanitizeUser(user) });
+});
+
+router.get("/recommendations/me", authRequired, async (req, res) => {
+  const user = await User.findById(req.auth.sub);
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const preferredCity = user.preferredCity || "Montreal";
+  const preferredMobilityType = user.preferredMobilityType || "scooter";
+
+  const typeRegex = preferredMobilityType === "bike"
+    ? /^(bike|e-bike)$/i
+    : /^scooter$/i;
+
+  const availableCount = await Vehicle.countDocuments({
+    available: true,
+    city: preferredCity,
+    type: { $regex: typeRegex }
+  });
+
+  const noun = preferredMobilityType === "bike" ? "Bikes" : "Scooters";
+  const message = availableCount > 0
+    ? `${noun} are currently available in ${preferredCity}. You may reserve one now.`
+    : `No ${preferredMobilityType}s are currently available in ${preferredCity}. Try another city or check back soon.`;
+
+  return res.json({
+    recommendation: {
+      preferredCity,
+      preferredMobilityType,
+      availableCount,
+      message
+    }
+  });
 });
 
 router.patch("/me/password", authRequired, async (req, res) => {

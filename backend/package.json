@@ -7,6 +7,7 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "seed": "node scripts/seed.js",
+    "seed:parking": "node scripts/seedParkingSpots.js",
     "images:download": "node scripts/downloadVehicleImagePool.js",
     "images:backfill": "node scripts/backfillVehicleImagePool.js"
   },

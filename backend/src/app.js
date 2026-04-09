@@ -9,6 +9,7 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import mapsRoutes from "./routes/mapsRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import parkingRoutes from "./routes/parkingRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,6 +57,7 @@ export function createApp() {
   app.use("/api/admin", adminRoutes);
   app.use("/api/maps", mapsRoutes);
   app.use("/api/notifications", notificationRoutes);
+  app.use("/api/parking", parkingRoutes);
 
   app.use((err, _req, res, _next) => {
     console.error(err);

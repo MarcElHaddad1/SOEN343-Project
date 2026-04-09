@@ -11,7 +11,9 @@ const userSchema = new mongoose.Schema(
     rejected: { type: Boolean, default: false },
     addressFormatted: { type: String, default: "" },
     addressLat: { type: Number },
-    addressLng: { type: Number }
+    addressLng: { type: Number },
+    preferredCity: { type: String, default: "Montreal", trim: true },
+    preferredMobilityType: { type: String, enum: ["bike", "scooter"], default: "scooter" }
   },
   { timestamps: true }
 );

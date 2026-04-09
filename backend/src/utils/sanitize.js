@@ -10,6 +10,8 @@ export function sanitizeUser(user) {
     addressFormatted: user.addressFormatted || "",
     addressLat: user.addressLat,
     addressLng: user.addressLng,
+    preferredCity: user.preferredCity || "Montreal",
+    preferredMobilityType: user.preferredMobilityType || "scooter",
     createdAt: user.createdAt
   };
 }

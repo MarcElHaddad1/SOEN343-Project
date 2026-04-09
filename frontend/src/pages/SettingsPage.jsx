@@ -13,7 +13,9 @@ export default function SettingsPage() {
     phone: user?.phone || "",
     addressFormatted: user?.addressFormatted || "",
     addressLat: user?.addressLat || "",
-    addressLng: user?.addressLng || ""
+    addressLng: user?.addressLng || "",
+    preferredCity: user?.preferredCity || "Montreal",
+    preferredMobilityType: user?.preferredMobilityType || "scooter"
   });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "" });
   const [message, setMessage] = useState("");
@@ -78,6 +80,15 @@ export default function SettingsPage() {
 
           <label>Longitude</label>
           <input value={profile.addressLng} onChange={(e) => setProfile((p) => ({ ...p, addressLng: e.target.value }))} />
+
+          <label>Preferred City</label>
+          <input value={profile.preferredCity} onChange={(e) => setProfile((p) => ({ ...p, preferredCity: e.target.value }))} />
+
+          <label>Preferred Mobility Type</label>
+          <select value={profile.preferredMobilityType} onChange={(e) => setProfile((p) => ({ ...p, preferredMobilityType: e.target.value }))}>
+            <option value="scooter">Scooter</option>
+            <option value="bike">Bike</option>
+          </select>
 
           <button type="submit">Save Profile</button>
         </form>

@@ -25,12 +25,16 @@ export default function PaymentsPage() {
           items.map((payment) => (
             <article key={payment.id} className="list-card booking-card">
               <div className="booking-header">
-                <h3>{payment.vehicle?.name || "Vehicle"}</h3>
+                <h3>{payment.kind === "parking" ? (payment.parking?.name || "Parking") : (payment.vehicle?.name || "Vehicle")}</h3>
                 <span className={`vehicle-pill ${payment.status === "succeeded" ? "pill-ok" : "pill-bad"}`}>
                   {payment.status}
                 </span>
               </div>
-              <p className="meta-line">{payment.vehicle?.type} - {payment.vehicle?.city}</p>
+              <p className="meta-line">
+                {payment.kind === "parking"
+                  ? `Parking - ${payment.parking?.city || "-"}`
+                  : `${payment.vehicle?.type || "-"} - ${payment.vehicle?.city || "-"}`}
+              </p>
               <div className="booking-meta">
                 <p><strong>Paid:</strong> {new Date(payment.createdAt).toLocaleString()}</p>
                 <p><strong>Payment Ref:</strong> {payment.stripePaymentIntentId}</p>
