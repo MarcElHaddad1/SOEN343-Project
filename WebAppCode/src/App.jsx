@@ -1,62 +1,58 @@
-import { useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import ToastPopup from "./components/ToastPopup";
-import { useApp } from "./context/AppContext";
-
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import SearchVehiclesPage from "./pages/SearchVehiclesPage";
-import ReservationPage from "./pages/ReservationPage";
-import ProviderDashboardPage from "./pages/ProviderDashboardPage";
-import AnalyticsPage from "./pages/AnalyticsPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ToastViewport from "./components/ToastViewport";
+import { useAuth } from "./context/AuthContext";
 import AdminPage from "./pages/AdminPage";
+import AdminStatsPage from "./pages/AdminStatsPage";
+import BookingsPage from "./pages/BookingsPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import CheckoutSuccessPage from "./pages/CheckoutSuccessPage";
+import LoginPage from "./pages/LoginPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import PaymentsPage from "./pages/PaymentsPage";
+import ProviderPage from "./pages/ProviderPage";
+import RegisterPage from "./pages/RegisterPage";
+import SearchPage from "./pages/SearchPage";
+import SettingsPage from "./pages/SettingsPage";
+import VehicleDetailsPage from "./pages/VehicleDetailsPage";
 
-function App() {
-    const { toast } = useApp();
+export default function App() {
+  const { user } = useAuth();
 
-    useEffect(() => {
-        const existingScript = document.getElementById("tawk-script");
+  return (
+    <>
+      <Navbar />
+      <ToastViewport />
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={user ? <Navigate to="/search" replace /> : <LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-        if (existingScript) return;
+        {/* Customer */}
+        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+        <Route path="/vehicles/:id" element={<ProtectedRoute><VehicleDetailsPage /></ProtectedRoute>} />
 
-        const s1 = document.createElement("script");
-        const s0 = document.getElementsByTagName("script")[0];
+        {/*
+          Fix: /checkout/success MUST be declared before /checkout/:id.
+          React Router v6+ matches routes in definition order when using
+          path segments — "success" would otherwise be captured as :id.
+        */}
+        <Route path="/checkout/success" element={<ProtectedRoute><CheckoutSuccessPage /></ProtectedRoute>} />
+        <Route path="/checkout/:id" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
 
-        window.Tawk_API = window.Tawk_API || {};
-        window.Tawk_LoadStart = new Date();
+        <Route path="/bookings" element={<ProtectedRoute><BookingsPage /></ProtectedRoute>} />
+        <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
-        s1.async = true;
-        s1.src = "https://embed.tawk.to/69ceb410b2f8a31c44a28829/1jl7munoo";
-        s1.charset = "UTF-8";
-        s1.setAttribute("crossorigin", "*");
-        s1.id = "tawk-script";
+        {/* Provider */}
+        <Route path="/provider" element={<ProtectedRoute roles={["provider"]}><ProviderPage /></ProtectedRoute>} />
 
-        if (s0?.parentNode) {
-            s0.parentNode.insertBefore(s1, s0);
-        } else {
-            document.body.appendChild(s1);
-        }
-    }, []);
-
-    return (
-        <div className="app-shell">
-            <Navbar />
-            <ToastPopup toast={toast} />
-
-            <main className="page-container">
-                <Routes>
-                    <Route path="/" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/search" element={<SearchVehiclesPage />} />
-                    <Route path="/reserve" element={<ReservationPage />} />
-                    <Route path="/provider" element={<ProviderDashboardPage />} />
-                    <Route path="/analytics" element={<AnalyticsPage />} />
-                    <Route path="/admin" element={<AdminPage />} />
-                </Routes>
-            </main>
-        </div>
-    );
+        {/* Admin */}
+        <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><AdminPage /></ProtectedRoute>} />
+        <Route path="/admin/stats" element={<ProtectedRoute roles={["admin"]}><AdminStatsPage /></ProtectedRoute>} />
+      </Routes>
+    </>
+  );
 }
-
-export default App;

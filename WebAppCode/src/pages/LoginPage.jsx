@@ -1,113 +1,75 @@
-import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useApp } from "../context/AppContext";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
 
 export default function LoginPage() {
-    const { login, currentUser } = useApp();
-    const navigate = useNavigate();
+  const { login } = useAuth();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
+  async function onSubmit(e) {
+    e.preventDefault();
+    setError("");
 
-    useEffect(() => {
-        if (currentUser) {
-            if (currentUser.role === "admin") {
-                navigate("/admin");
-                return;
-            }
+    try {
+      const data = await login(email, password);
+      if (data.user.role === "admin") navigate("/admin");
+      else if (data.user.role === "provider" && data.user.rejected) {
+        showToast("Provider account is rejected. Contact admin support.", "error");
+        navigate("/provider");
+      } else if (data.user.role === "provider" && !data.user.approved) {
+        showToast("Provider account is waiting for admin approval.", "error");
+        navigate("/provider");
+      } else if (data.user.role === "provider") {
+        showToast("Provider login successful.");
+        navigate("/provider");
+      } else navigate("/search");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
 
-            if (currentUser.role === "provider" && !currentUser.approved) {
-                return;
-            }
-
-            navigate("/search");
-        }
-    }, [currentUser, navigate]);
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
-        const result = login(email, password);
-        setMessage(result.message);
-    };
-
-    return (
-        <div className="auth-shell">
-            <div className="auth-panel auth-panel-left">
-                <div className="auth-left-content">
-                    <span className="auth-eyebrow">Mobility Rental Platform</span>
-                    <h1>Welcome back</h1>
-                    <p>
-                        Sign in to access vehicle search, reservations, analytics,
-                        and provider tools.
-                    </p>
-
-                    <div className="auth-feature-list">
-                        <div className="auth-feature-item">
-                            <strong>Fast access</strong>
-                            <span>Search and reserve vehicles in seconds.</span>
-                        </div>
-
-                        <div className="auth-feature-item">
-                            <strong>Provider workflow</strong>
-                            <span>Approved providers can manage vehicle inventory.</span>
-                        </div>
-
-                        <div className="auth-feature-item">
-                            <strong>Admin control</strong>
-                            <span>Review and approve provider accounts.</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="auth-panel auth-panel-right">
-                <div className="card auth-card auth-card-modern">
-                    <div className="card-header">
-                        <h2>Login</h2>
-                        <p className="muted">Enter your credentials to continue.</p>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="form-grid">
-                        <input
-                            className="input"
-                            type="text"
-                            placeholder="Email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-
-                        <input
-                            className="input"
-                            type="password"
-                            placeholder="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-
-                        <button className="btn primary-btn" type="submit">
-                            Login
-                        </button>
-                    </form>
-
-                    {message && <p className="message">{message}</p>}
-
-                    {currentUser &&
-                        currentUser.role === "provider" &&
-                        !currentUser.approved && (
-                            <div className="warning" style={{ marginTop: "12px" }}>
-                                Your provider account is waiting for admin approval.
-                            </div>
-                        )}
-
-                    <p className="muted auth-footer-text">
-                        No account yet? <Link to="/register">Create one here</Link>
-                    </p>
-                </div>
-            </div>
+  return (
+    <div className="auth-split">
+      <section className="auth-visual">
+        <div className="auth-visual-overlay" />
+        <div className="auth-brand">
+          <div className="auth-logo" aria-hidden="true">
+            <span>MR</span>
+          </div>
+          <div>
+            <p className="auth-kicker">Mobility Rental</p>
+            <h1>Drive the city your way</h1>
+          </div>
         </div>
-    );
+        <p className="auth-visual-copy">
+          Discover premium bikes, scooters, cars, and SUVs with map-accurate pickup points and seamless booking.
+        </p>
+      </section>
+
+      <section className="auth-form-panel">
+        <div className="auth-form-card">
+          <h2>Welcome Back</h2>
+          <p className="auth-subtext">Sign in to continue your rentals.</p>
+
+          <form onSubmit={onSubmit} className="form">
+            <label>Email</label>
+            <input value={email} onChange={(e) => setEmail(e.target.value)} />
+
+            <label>Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+
+            <button type="submit">Sign In</button>
+          </form>
+
+          {error && <p className="error">{error}</p>}
+          <p className="auth-subtext">No account? <Link to="/register">Create one</Link>.</p>
+        </div>
+      </section>
+    </div>
+  );
 }
